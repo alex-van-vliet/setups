@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from helpers.commands import run
+from helpers.commands import Runner
 
 # The directory containing the setups
 DIRECTORY = Path.home() / '.setups'
@@ -52,5 +52,6 @@ def setup(name):
     """
     subdirectory = get_setup(name)
 
+    runner = Runner(subdirectory)
     for command in read_configuration(name, subdirectory):
-        run(subdirectory, command)
+        runner(command)

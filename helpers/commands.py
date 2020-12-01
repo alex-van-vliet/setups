@@ -1,6 +1,6 @@
 from pathlib import Path
 from subprocess import Popen
-from typing import List
+from typing import List, Mapping
 from shutil import copy
 
 from helpers.colors import rgb, number, reset
@@ -42,35 +42,47 @@ def run_echo(directory: Path, arguments: List[str]):
     print(' '.join(arguments))
 
 
-def run(directory: Path, command: str):
-    """
-    Run a command
-    :param directory: The setup directory
-    :param command: The command
-    :return: The result from the command, if there is one
-    """
-    commands = {
-        'command': run_command,
-        'file': run_file,
-        'echo': run_echo,
-    }
+class Runner:
+    variables: Mapping[str, str]
+    directory: Path
 
-    def variables(name: str) -> str:
-        if name.startswith('COLOR:'):
-            try:
-                return number(int(name[len('COLOR:'):]))
-            except ValueError:
-                pass
+    def __init__(self, directory):
+        """
+        Create a runner
+        :param directory: The setup directory
+        """
+        self.variables = {}
+        self.directory = directory
 
-            values = name[len('COLOR:'):].split(':')
-            if len(values) == 3:
+    def __call__(self, command: str):
+        """
+        Run a command
+        :param command: The command
+        :return: The result from the command, if there is one
+        """
+
+        commands = {
+            'command': run_command,
+            'file': run_file,
+            'echo': run_echo,
+        }
+
+        def variables(name: str) -> str:
+            if name.startswith('COLOR:'):
                 try:
-                    return rgb(*(int(value) for value in values))
+                    return number(int(name[len('COLOR:'):]))
                 except ValueError:
                     pass
-        elif name == 'RESET':
-            return reset()
-        raise ValueError(f'variable {name} not found')
 
-    command = list(parse(command, variables))
-    return commands[command[0]](directory, command[1:])
+                values = name[len('COLOR:'):].split(':')
+                if len(values) == 3:
+                    try:
+                        return rgb(*(int(value) for value in values))
+                    except ValueError:
+                        pass
+            elif name == 'RESET':
+                return reset()
+            raise ValueError(f'variable {name} not found')
+
+        command = list(parse(command, variables))
+        return commands[command[0]](self.directory, command[1:])
