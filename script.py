@@ -29,7 +29,7 @@ def main():
         subparser.set_defaults(func=command)
 
     arguments = sys.argv[1:]
-    if arguments and arguments[0] not in command_names:
+    if arguments and arguments[0] not in command_names and not arguments[0].startswith('-'):
         arguments.insert(0, 'run')
 
     args = parser.parse_args(arguments)
