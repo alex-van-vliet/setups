@@ -1,12 +1,17 @@
 from typing import Callable
 
+from typing import TYPE_CHECKING
 
-def get_variable(command: str, i: int, variables: Callable[[str], str]):
+if TYPE_CHECKING:
+    from helpers.commands import Runner
+
+
+def get_variable(runner: 'Runner', command: str, i: int):
     """
     Parse a variable
+    :param runner: The runner
     :param command: The command string
     :param i: The cursor in the string
-    :param variables: The variables callback
     :return: The index after parsing the variable name, the content of the variable
     """
     i += 1
@@ -24,12 +29,13 @@ def get_variable(command: str, i: int, variables: Callable[[str], str]):
     if i == len(command):
         raise ValueError("missing closing }")
     i += 1
-    return i, variables(name)
+    return i, runner.get_variable(name)
 
 
-def get_escaped(command: str, i: int):
+def get_escaped(runner: 'Runner', command: str, i: int):
     """
     Parse an escaped character
+    :param runner: The runner
     :param command: The command string
     :param i: The cursor in the string
     :return: The index after parsing the escaped character, the new character
@@ -55,22 +61,22 @@ def get_escaped(command: str, i: int):
     raise ValueError('invalid character after \\')
 
 
-def get_token_quoted(command: str, i: int, variables: Callable[[str], str]):
+def get_token_quoted(runner: 'Runner', command: str, i: int):
     """
     Parse quotes
+    :param runner: The runner
     :param command: The command string
     :param i: The cursor in the string
-    :param variables: The variables callback
     :return: The index after the ending quote, the content of the quotes
     """
     token = ''
     i += 1
     while i < len(command) and command[i] != '"':
         if command[i] == '\\':
-            i, subtoken = get_escaped(command, i)
+            i, subtoken = get_escaped(runner, command, i)
             token += subtoken
         elif command[i] == '$':
-            i, subtoken = get_variable(command, i, variables)
+            i, subtoken = get_variable(runner, command, i)
             token += subtoken
         else:
             token += command[i]
@@ -81,24 +87,24 @@ def get_token_quoted(command: str, i: int, variables: Callable[[str], str]):
     return i, token
 
 
-def get_token(command: str, variables: Callable[[str], str]):
+def get_token(runner: 'Runner', command: str):
     """
     Parse a token
+    :param runner: The runner
     :param command: The command string
-    :param variables: The variables callback
     :return: The index after the ending quote, the content of the quotes
     """
     token = ''
     i = 0
     while i < len(command) and command[i] != ' ':
         if command[i] == '"':
-            i, subtoken = get_token_quoted(command, i, variables)
+            i, subtoken = get_token_quoted(runner, command, i)
             token += subtoken
         elif command[i] == '$':
-            i, subtoken = get_variable(command, i, variables)
+            i, subtoken = get_variable(runner, command, i)
             token += subtoken
         elif command[i] == '\\':
-            i, subtoken = get_escaped(command, i)
+            i, subtoken = get_escaped(runner, command, i)
             token += subtoken
         else:
             token += command[i]
@@ -106,13 +112,13 @@ def get_token(command: str, variables: Callable[[str], str]):
     return token, command[i:].lstrip(' ')
 
 
-def parse(command: str, variables: Callable[[str], str]):
+def parse(runner: 'Runner', command: str):
     """
     Parse the command by yielding all its tokens
+    :param runner: The runner
     :param command: The command string
-    :param variables: The variables callback
     """
     command = command.lstrip(' ').rstrip(' ')
     while command:
-        token, command = get_token(command, variables)
+        token, command = get_token(runner, command)
         yield token
