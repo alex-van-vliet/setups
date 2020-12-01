@@ -54,4 +54,5 @@ def setup(name):
 
     runner = Runner(subdirectory)
     for command in read_configuration(name, subdirectory):
-        runner(command)
+        if command:
+            runner(command)
