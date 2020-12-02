@@ -1,4 +1,5 @@
 import re
+from argparse import ArgumentParser
 from pathlib import Path
 from subprocess import Popen
 from typing import List, Mapping
@@ -31,6 +32,7 @@ class Runner:
             'file': run_file,
             'echo': run_echo,
             'set': run_set,
+            'ask': run_ask,
         }
 
         command = list(parse(self, command))
@@ -123,4 +125,35 @@ def run_set(runner: Runner, arguments: List[str]):
     value = arguments[1]
     if not is_variable(name):
         raise ValueError("invalid name for variable")
+    runner.set_variable(name, value)
+
+
+class CommandArgumentParser(ArgumentParser):
+    def __init__(self, prog, *args, **kwargs):
+        super(CommandArgumentParser, self).__init__(prog=prog, add_help=False, *args, **kwargs)
+
+    def error(self, message):
+        raise ValueError(f"invalid arguments for {self.prog}")
+
+
+def run_ask(runner: Runner, arguments: List[str]):
+    parser = CommandArgumentParser('ask', description='get input from the user')
+
+    def variable_type(value: str):
+        REGEX = re.compile(r'^([a-zA-Z0-9_])*$')
+        if not REGEX.match(value):
+            raise ValueError("invalid name for variable")
+        return value
+
+    parser.add_argument('variable', type=variable_type)
+    parser.add_argument('query')
+    parser.add_argument('--default', default=None)
+    arguments = parser.parse_args(arguments)
+
+    name = arguments.variable
+    query = arguments.query
+    default = f"[{arguments.default}] " if arguments.default else ''
+    value = input(f"{query} {default}")
+    if not value and arguments.default:
+        value = arguments.default
     runner.set_variable(name, value)
