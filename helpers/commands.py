@@ -5,7 +5,7 @@ from typing import List, Mapping
 from shutil import copy
 
 from helpers.colors import rgb, number, reset
-from helpers.parser import parse
+from helpers.parser import parse, is_variable
 
 
 class Runner:
@@ -119,9 +119,8 @@ def run_set(runner: Runner, arguments: List[str]):
     """
     if len(arguments) != 2:
         raise ValueError("invalid arguments for set")
-    REGEX = re.compile(r'^([a-zA-Z])*')
     name = arguments[0]
     value = arguments[1]
-    if not REGEX.match(name):
+    if not is_variable(name):
         raise ValueError("invalid name for variable")
     runner.set_variable(name, value)

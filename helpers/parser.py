@@ -1,9 +1,14 @@
-from typing import Callable
+import re
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from helpers.commands import Runner
+
+
+def is_variable(name: str):
+    REGEX = re.compile(r'^([a-zA-Z0-9_])*$')
+    return REGEX.match(name)
 
 
 def get_variable(runner: 'Runner', command: str, i: int):
