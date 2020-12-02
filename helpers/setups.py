@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from helpers.commands import Runner
+from helpers.runner import Runner
 
 # The directory containing the setups
 DIRECTORY = Path.home() / '.setups'
