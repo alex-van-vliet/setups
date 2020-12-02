@@ -153,7 +153,13 @@ def run_ask(runner: Runner, arguments: List[str]):
     name = arguments.variable
     query = arguments.query
     default = f"[{arguments.default}] " if arguments.default else ''
-    value = input(f"{query} {default}")
-    if not value and arguments.default:
-        value = arguments.default
+    try:
+        value = input(f"{query} {default}")
+        if not value and arguments.default:
+            value = arguments.default
+    except EOFError:
+        if arguments.default:
+            value = arguments.default
+        else:
+            raise ValueError("could not read value")
     runner.set_variable(name, value)
