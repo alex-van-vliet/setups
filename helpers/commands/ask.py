@@ -18,13 +18,16 @@ class Ask(AbstractCommand):
         """
         parser.add_argument('variable', type=check_to_type(is_variable, "invalid name for variable"))
         parser.add_argument('query')
-        parser.add_argument('--default', default=None)
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--default', default=None)
+        group.add_argument('--required', default=False, action='store_const', const=True)
 
-    def input(self, query: str, default: Optional[str]):
+    def input(self, query: str, default: Optional[str], required: bool):
         """
         Get the input from the user
         :param query: The query string
         :param default: The default value
+        :param required: Whether the input is required
         :return: The input from the user
         """
         try:
@@ -34,20 +37,26 @@ class Ask(AbstractCommand):
                     return value
                 return default
             else:
-                return input(f"{query} ")
+                value = input(f"{query} ")
+                if required and not value:
+                    raise ValueError("a value is required")
+                return value
         except EOFError:
             print()
             if default:
                 return default
+            if required:
+                raise ValueError("a value is required")
             raise ValueError("could not read value")
 
-    def __call__(self, runner: 'Runner', variable: str, query: str, default: Optional[str], **kwargs):
+    def __call__(self, runner: 'Runner', variable: str, query: str, default: Optional[str], required: bool, **kwargs):
         """
         Call the command
         :param runner: The runner
         :param variable: The name of the variable
         :param query: The query string
         :param default: The default value
+        :param required: Whether the input is required
         """
-        value = self.input(query, default)
+        value = self.input(query, default, required)
         runner.set_variable(variable, value)
