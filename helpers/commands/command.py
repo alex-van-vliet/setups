@@ -1,3 +1,4 @@
+from argparse import REMAINDER
 from subprocess import Popen
 from typing import List, TYPE_CHECKING
 
@@ -15,7 +16,7 @@ class Command(AbstractCommand):
         """
         Setup the parser
         """
-        parser.add_argument('command', nargs='+')
+        parser.add_argument('command', nargs=REMAINDER)
 
     def __call__(self, runner: 'Runner', command: List[str], **kwargs):
         """
