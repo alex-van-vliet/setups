@@ -36,6 +36,7 @@ class Ask(AbstractCommand):
             else:
                 return input(f"{query} ")
         except EOFError:
+            print()
             if default:
                 return default
             raise ValueError("could not read value")
