@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from helpers.parsing.lexer import Lexer
+from helpers.parsing.parser import Parser, Command, Sequence
 from helpers.runner import Runner
 
 # The directory containing the setups
@@ -51,8 +53,13 @@ def setup(name):
     :param name: The name of the setup
     """
     subdirectory = get_setup(name)
+    config = subdirectory / '.config.setup'
 
-    runner = Runner(subdirectory)
-    for command in read_configuration(name, subdirectory):
-        if command:
-            runner(command)
+    ast = None
+    with config.open() as file:
+        lexer = Lexer(file)
+        parser = Parser(lexer)
+        ast = parser.parse()
+    if ast:
+        runner = Runner(subdirectory)
+        runner.run(ast)

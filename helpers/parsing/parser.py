@@ -3,7 +3,14 @@ from typing import Union, List
 from helpers.parsing.lexer import Lexer, TOKEN
 
 
-class Command:
+class Node:
+    def apply(self, visitor):
+        name = ''.join((f"_{c.lower()}" if c.isupper() else c) for c in self.__class__.__name__).lstrip('_')
+        fun = getattr(visitor, f"visit_{name}")
+        fun(self)
+
+
+class Command(Node):
     arguments: List[str]
 
     def __init__(self, arguments=None):
@@ -14,10 +21,10 @@ class Command:
         return self
 
     def __str__(self):
-        return f'Command(arguments={repr(self.arguments)})'
+        return repr(self)
 
     def __repr__(self):
-        return str(self)
+        return f'Command(arguments={repr(self.arguments)})'
 
     def __eq__(self, other):
         if not isinstance(other, Command):
@@ -28,7 +35,7 @@ class Command:
         return not (self == other)
 
 
-class Sequence:
+class Sequence(Node):
     commands: List[Union[Command]]
 
     def __init__(self, commands=None):

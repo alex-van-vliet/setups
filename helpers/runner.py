@@ -9,6 +9,32 @@ from helpers.commands.echo import Echo
 from helpers.commands.file import File
 from helpers.commands.set import Set
 from helpers.parser import parse
+from helpers.parsing.parser import Sequence as SequenceNode, Command as CommandNode
+
+
+class PrinterVisitor:
+    def visit_command(self, command: CommandNode):
+        print(' '.join(command.arguments), end='')
+
+    def visit_sequence(self, sequence: SequenceNode):
+        for command in sequence.commands:
+            command.apply(self)
+            print()
+
+
+class RunnerVisitor:
+    runner: 'Runner'
+
+    def __init__(self, runner):
+        self.runner = runner
+
+    def visit_command(self, command: CommandNode):
+        print(' '.join(command.arguments), end='')
+
+    def visit_sequence(self, sequence: SequenceNode):
+        for command in sequence.commands:
+            command.apply(self)
+            print()
 
 
 class Runner:
@@ -32,6 +58,14 @@ class Runner:
                 Set()
             ]
         }
+
+    def run(self, ast: SequenceNode):
+        """
+        Run an ast
+        :param ast: The ast
+        :return: The result from the commands
+        """
+        ast.apply(RunnerVisitor(self))
 
     def __call__(self, command: str):
         """
