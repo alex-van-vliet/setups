@@ -93,6 +93,16 @@ from helpers.parsing.lexer import Lexer, Token, LexerError
     pytest.param('\\v',
                  [Token.word('\\v'), Token.separator()],
                  id="an escaped v"),
+
+    pytest.param('# This is a test',
+                 [],
+                 id="only a comment"),
+    pytest.param('# This is a test\n# This is a second test',
+                 [],
+                 id="two comments on two lines"),
+    pytest.param('myword # This is a test',
+                 [Token.word('myword'), Token.separator()],
+                 id="a command after words"),
 ])
 def test_lexer_successful(input: str, expected: List[Token]):
     io = StringIO(input)
