@@ -10,16 +10,7 @@ from helpers.commands.echo import Echo
 from helpers.commands.file import File
 from helpers.commands.set import Set
 from helpers.parsing.parser import Sequence as SequenceNode, Command as CommandNode
-
-
-class PrinterVisitor:
-    def visit_command(self, command: CommandNode):
-        print(' '.join(command.arguments), end='')
-
-    def visit_sequence(self, sequence: SequenceNode):
-        for command in sequence.commands:
-            command.apply(self)
-            print()
+from helpers.parsing.word import Word, Raw, Quoted, Variable
 
 
 class RunnerVisitor:
@@ -31,7 +22,7 @@ class RunnerVisitor:
         self.exit = 0
 
     def visit_command(self, command: CommandNode):
-        print('> ' + ' '.join(command.arguments))
+        print('> ' + ' '.join(str(argument) for argument in command.arguments))
         self.exit = self.runner(command.arguments)
 
     def visit_sequence(self, sequence: SequenceNode):
@@ -39,6 +30,29 @@ class RunnerVisitor:
             command.apply(self)
             if self.exit != 0:
                 break
+
+
+class RunnerResolver:
+    runner: 'Runner'
+    result: str
+
+    def __init__(self, runner):
+        self.runner = runner
+        self.result = ''
+
+    def visit_word(self, word: Word):
+        for segment in word.segments:
+            segment.apply(self)
+
+    def visit_raw(self, word: Raw):
+        self.result += word.value
+
+    def visit_quoted(self, quoted: Quoted):
+        for segment in quoted.segments:
+            segment.apply(self)
+
+    def visit_variable(self, variable: Variable):
+        self.result += self.runner.get_variable(variable.name)
 
 
 class Runner:
@@ -131,84 +145,13 @@ class Runner:
             return self.variables[name]
         raise ValueError(f'variable {name} not found')
 
-    def resolve(self, argument: str):
+    def resolve(self, argument: Word):
         """
         Resolve an argument, meaning expand variables, escaped characters...
         :param argument: The argument to resolve
         :return: The resolved argument
         """
 
-        def resolve_variable(i: int):
-            i += 1
-            if argument[i] != '{':
-                raise ValueError("invalid character after $")
-            i += 1
-            name = ''
-            while i < len(argument) and argument[i] != '}':
-                if argument[i] == '\\':
-                    i, subtoken = resolve_escaped(i)
-                    name += subtoken
-                else:
-                    name += argument[i]
-                    i += 1
-            if i == len(argument):
-                raise ValueError("missing closing }")
-            i += 1
-            return i, self.get_variable(name)
-
-        def resolve_escaped(i: int):
-            i += 1
-            if i == len(argument):
-                raise ValueError("missing character after \\")
-            characters = {
-                'n': '\n',
-                't': '\t',
-                '$': '$',
-                '\\': '\\',
-                '"': '"',
-                'a': '\a',
-                'b': '\b',
-                'f': '\f',
-                'r': '\r',
-                'v': '\v',
-            }
-            if argument[i] in characters:
-                return i + 1, characters[argument[i]]
-            raise ValueError('invalid character after \\')
-
-        def resolve_quotes(i: int):
-            token = ''
-            i += 1
-            while i < len(argument) and argument[i] != '"':
-                if argument[i] == '\\':
-                    i, subtoken = resolve_escaped(i)
-                    token += subtoken
-                elif argument[i] == '$':
-                    i, subtoken = resolve_variable(i)
-                    token += subtoken
-                else:
-                    token += argument[i]
-                    i += 1
-            if i == len(argument):
-                raise ValueError("missing closing \"")
-            i += 1
-            return i, token
-
-        def resolve_str(i: int):
-            token = ''
-            while i < len(argument):
-                if argument[i] == '"':
-                    i, subtoken = resolve_quotes(i)
-                    token += subtoken
-                elif argument[i] == '$':
-                    i, subtoken = resolve_variable(i)
-                    token += subtoken
-                elif argument[i] == '\\':
-                    i, subtoken = resolve_escaped(i)
-                    token += subtoken
-                else:
-                    token += argument[i]
-                    i += 1
-            return i, token
-
-        return resolve_str(0)[1]
+        resolver = RunnerResolver(self)
+        argument.apply(resolver)
+        return resolver.result

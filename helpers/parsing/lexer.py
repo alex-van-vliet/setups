@@ -1,13 +1,8 @@
 from enum import Enum
 from typing import Optional, TextIO
 
-
-def is_whitespace(char):
-    return char == ' '
-
-
-def is_special(char):
-    return char in [';']
+from helpers.parsing.characters import is_whitespace
+from helpers.parsing.word import Word
 
 
 class TOKEN(Enum):
@@ -19,7 +14,7 @@ class TOKEN(Enum):
 
 class Token:
     type: TOKEN
-    value: Optional[str]
+    value: Optional[Word]
 
     def __init__(self, type, value=None):
         self.type = type
@@ -56,18 +51,6 @@ class Token:
         return not (self == other)
 
 
-class LexerError(BaseException):
-    error: str
-    line: str
-
-    def __init__(self, error, line):
-        self.error = error
-        self.line = line
-
-    def __str__(self):
-        return f"{self.error} on line {repr(self.line)}"
-
-
 class Lexer:
     file: TextIO
     pos: int
@@ -85,50 +68,6 @@ class Lexer:
 
     def current(self):
         return self.token
-
-    def eat_escaped(self):
-        self.pos += 1
-        if self.pos == len(self.line):
-            raise LexerError("missing escaped character", self.line)
-        if self.line[self.pos] not in ['n', 't', '$', '\\', '"', 'a', 'b', 'f', 'r', 'v']:
-            raise LexerError("invalid escaped character", self.line)
-        self.pos += 1
-
-    def eat_quoted(self):
-        self.pos += 1
-        while self.pos < len(self.line) and self.line[self.pos] != '"':
-            if self.line[self.pos] == '$':
-                self.eat_variable()
-            elif self.line[self.pos] == '\\':
-                self.eat_escaped()
-            else:
-                self.pos += 1
-        if self.pos == len(self.line):
-            raise LexerError("missing quote end", self.line)
-        self.pos += 1
-
-    def eat_variable(self):
-        self.pos += 1
-        if self.pos == len(self.line) or self.line[self.pos] != '{':
-            raise LexerError("missing variable start", self.line)
-        self.pos += 1
-        while self.pos < len(self.line) and self.line[self.pos] != '}':
-            self.pos += 1
-        if self.pos == len(self.line):
-            raise LexerError("missing variable end", self.line)
-        self.pos += 1
-
-    def eat_str(self):
-        while self.pos < len(self.line) and not is_whitespace(self.line[self.pos]) and not is_special(
-                self.line[self.pos]):
-            if self.line[self.pos] == '"':
-                self.eat_quoted()
-            elif self.line[self.pos] == '$':
-                self.eat_variable()
-            elif self.line[self.pos] == '\\':
-                self.eat_escaped()
-            else:
-                self.pos += 1
 
     def eat_once(self):
         if self.token == TOKEN.END:
@@ -159,8 +98,8 @@ class Lexer:
             return self.token
         else:
             start = self.pos
-            self.eat_str()
-            self.token = Token.word(self.line[start:self.pos])
+            self.pos, word = Word.parse(self.line, start)
+            self.token = Token.word(word)
             return self.token
 
     def eat(self):
