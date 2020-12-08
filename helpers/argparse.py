@@ -6,3 +6,5 @@ def check_to_type(check: Callable[[str], bool], message: str):
         if not check(value):
             raise ValueError(message)
         return value
+
+    return type_fn
