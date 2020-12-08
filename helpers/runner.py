@@ -69,7 +69,9 @@ class Runner:
         :param ast: The ast
         :return: The result from the commands
         """
-        ast.apply(RunnerVisitor(self))
+        visitor = RunnerVisitor(self)
+        ast.apply(visitor)
+        return visitor.exit
 
     def __call__(self, command: List[str]):
         """

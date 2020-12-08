@@ -53,11 +53,11 @@ def setup(name):
     """
     Setup a setup
     :param name: The name of the setup
+    :return: The exit code
     """
     subdirectory = get_setup(name)
     config = subdirectory / '.config.setup'
 
-    ast = None
     with config.open() as file:
         lexer = Lexer(file)
         parser = Parser(lexer)
@@ -66,11 +66,12 @@ def setup(name):
         except LexerError as e:
             print(f"{number(1)}{str(e.error).capitalize()}{reset()} on line:", file=sys.stderr)
             print(e.line, file=sys.stderr)
+            return 1
         except ParserError as e:
             print(f"{number(1)}{str(e.error).capitalize()}{reset()} on token:", file=sys.stderr)
             print(repr(e.token), file=sys.stderr)
-            pass
+            return 2
 
-    if ast:
-        runner = Runner(subdirectory)
-        runner.run(ast)
+    runner = Runner(subdirectory)
+    exit = runner.run(ast)
+    return 0 if exit == 0 else exit + 2

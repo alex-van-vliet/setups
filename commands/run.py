@@ -24,7 +24,8 @@ class RunCommand(Command):
         Run the run command
         :param setup: The name of the setup
         :param kwargs: The arguments
-        :return: Zero if there was no error, one otherwise
+        :return: The exit code of the commands: 0 if successful, 1 if lexer error, 2 if parser error,
+                 more if another error
         """
         destination = Path(directory).resolve()
         makedirs(destination, exist_ok=True)
@@ -39,10 +40,4 @@ class RunCommand(Command):
                 chdir(cwd)
 
         with cd(destination):
-            try:
-                setup_fun(setup)
-            except ValueError as e:
-                print(str(e), file=sys.stderr)
-                return 1
-
-        return 0
+            return setup_fun(setup)
