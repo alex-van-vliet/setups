@@ -1,7 +1,9 @@
+import sys
 from pathlib import Path
 
-from helpers.parsing.lexer import Lexer
-from helpers.parsing.parser import Parser, Command, Sequence
+from helpers.colors import number, reset
+from helpers.parsing.lexer import Lexer, LexerError
+from helpers.parsing.parser import Parser, ParserError
 from helpers.runner import Runner
 
 # The directory containing the setups
@@ -59,7 +61,16 @@ def setup(name):
     with config.open() as file:
         lexer = Lexer(file)
         parser = Parser(lexer)
-        ast = parser.parse()
+        try:
+            ast = parser.parse()
+        except LexerError as e:
+            print(f"{number(1)}{str(e.error).capitalize()}{reset()} on line:", file=sys.stderr)
+            print(e.line, file=sys.stderr)
+        except ParserError as e:
+            print(f"{number(1)}{str(e.error).capitalize()}{reset()} on token:", file=sys.stderr)
+            print(repr(e.token), file=sys.stderr)
+            pass
+
     if ast:
         runner = Runner(subdirectory)
         runner.run(ast)
