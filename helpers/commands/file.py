@@ -1,6 +1,7 @@
 from pathlib import Path
 from shutil import copyfile
 from typing import TYPE_CHECKING, Optional
+from os import listdir
 
 from helpers.commands.abstract_command import AbstractCommand
 
@@ -26,7 +27,18 @@ class File(AbstractCommand):
         :param file: The path to the file
         :param destination: Where to copy the file, based on its name if not present
         """
+
+        def copy(file: Path, destination: Path):
+            if destination.exists():
+                raise ValueError(f"{destination} already exists")
+            if file.is_dir():
+                destination.mkdir()
+                for sub in listdir(file):
+                    copy(file / sub, destination / sub)
+            else:
+                copyfile(file, destination)
+
         destination = destination if destination else file
         file = runner.get_directory() / file
         destination = Path.cwd() / destination
-        copyfile(file, destination)
+        copy(file, destination)
