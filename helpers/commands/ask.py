@@ -1,11 +1,16 @@
+import re
 from typing import TYPE_CHECKING, Optional
 
 from helpers.argparse import check_to_type
 from helpers.commands.abstract_command import AbstractCommand
-from helpers.parser import is_variable
 
 if TYPE_CHECKING:
     from helpers.runner import Runner
+
+
+def is_variable(name: str):
+    REGEX = re.compile(r'^([a-zA-Z0-9_])*$')
+    return REGEX.match(name)
 
 
 class Ask(AbstractCommand):
