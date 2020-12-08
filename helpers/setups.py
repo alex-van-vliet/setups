@@ -4,7 +4,8 @@ from pathlib import Path
 from helpers.colors import number, reset
 from helpers.parsing.lexer import Lexer
 from helpers.parsing.lexer_error import LexerError
-from helpers.parsing.parser import Parser, ParserError
+from helpers.parsing.parser import Parser
+from helpers.parsing.parser_error import ParserError
 from helpers.runner import Runner
 
 # The directory containing the setups

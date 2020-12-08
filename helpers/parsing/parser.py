@@ -1,6 +1,7 @@
 from typing import Union, List
 
 from helpers.parsing.lexer import Lexer, TOKEN
+from helpers.parsing.parser_error import ParserError
 
 
 class Node:
@@ -59,15 +60,6 @@ class Sequence(Node):
 
     def __ne__(self, other):
         return not (self == other)
-
-
-class ParserError(BaseException):
-    def __init__(self, error, token):
-        self.error = error
-        self.token = token
-
-    def __str__(self):
-        return f"{self.error} on token {self.token}"
 
 
 class Parser:
